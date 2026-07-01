@@ -1,3 +1,3 @@
-module shanks
+module yoru
 
 go 1.26.4
