@@ -1,8 +1,8 @@
 package make
 
 import (
-	"yoru/make/dir" 
-	"yoru/make/file" 
+	"yoru/methods/make/dir" 
+	"yoru/methods/make/file" 
 	"fmt" 
 )
 

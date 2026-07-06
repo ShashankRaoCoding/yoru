@@ -1,17 +1,18 @@
 package main
 
 import (
+	"yoru/methods" 
 	"os" 
 	"fmt" 
-	mk "yoru/make" 
-	"yoru/csv"
+	// mk "yoru/make" 
+	// "yoru/csv"
 )
 
 var Methods = make(map[string]func([]string)error) 
 
 func init() {
-	Methods["make"] = mk.Main
-	Methods["csv"] = csv.Main
+	Methods["methods"] = methods.Main
+	Methods["info"] = info
 }
 
 func main() {
@@ -36,7 +37,13 @@ func main() {
 	os.Exit(0) 
 }
 
-
+func info(args []string) error {
+	fmt.Println("Options: ") 
+	for name, _ := range Methods {
+		fmt.Println(name) 
+	}
+	return nil 
+}
 
 
 
