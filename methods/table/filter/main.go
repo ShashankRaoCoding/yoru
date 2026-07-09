@@ -2,14 +2,15 @@ package methods
 
 import (
 	"fmt"
+	"yoru/methods/table/structs"
 )
 
 var Methods = make(map[string]func([]string) error)
 
 func init() {
-	Methods["filter"] = filter.Main
-	Methods["swap"] = replace.Main
-	Methods["select"] = select.Main
+	Methods["rows"] = filterRows
+	Methods["cols"] = filterCols
+
 }
 
 func Main(args []string) error {
@@ -19,4 +20,9 @@ func Main(args []string) error {
 	}
 
 	return m(args[1:])
+}
+
+func filterRows([]string) error {
+	t, err := structs.New(os.Stdin)
+
 }
