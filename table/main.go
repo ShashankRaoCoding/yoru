@@ -22,3 +22,7 @@ func main() {
 	globals.Handle(ok)
 	m(args[1:])
 }
+
+func CreateTableFromStdin() {
+
+}
