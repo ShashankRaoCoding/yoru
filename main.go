@@ -3,7 +3,7 @@ package main
 import (
 	mk "make"
 	"os"
-	"table"
+	"sql"
 )
 
 var Methods map[string]func([]string)
@@ -11,7 +11,7 @@ var Methods map[string]func([]string)
 func init() {
 	var Methods = map[string]func([]string){
 		"make":  mk.Main,
-		"table": table.Main,
+		"sql": sql.Main,
 		"info":  info.Main,
 	}
 }

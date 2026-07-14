@@ -6,7 +6,7 @@ func Main(args []string) {
 	for _, path := range args {
 		file, err := os.Create(path)
 		defer file.Close()
-		globals.Handle(err)
+		utils.Error(err)
 		text := ""
 		for range 45 {
 			text += "\n"
