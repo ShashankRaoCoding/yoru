@@ -1,9 +1,11 @@
 package sqlpkg
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"yoru/globals"
 	"yoru/sql/formats"
 	"yoru/utils"
@@ -16,11 +18,14 @@ func Main(args []string) {
 	outputFormat := fs.String("o", "csv", "Output format: csv, tsv, or sqldb")
 	
 	fs.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: yoru sql [options] <query>\n")
+		fmt.Fprintf(os.Stderr, "Usage: yoru sql [options] <query> [dbpath for sqldb]\n")
 		fmt.Fprintf(os.Stderr, "\nOptions:\n")
 		fs.PrintDefaults()
-		fmt.Fprintf(os.Stderr, "\nFor -i sqldb and -o sqldb, provide the database file path as the input/output source.\n")
-		fmt.Fprintf(os.Stderr, "For -i csv/tsv and -o csv/tsv, data is read from stdin and written to stdout.\n")
+		fmt.Fprintf(os.Stderr, "\nExamples:\n")
+		fmt.Fprintf(os.Stderr, "  cat data.csv | yoru sql -i csv -o csv 'SELECT * FROM table'\n")
+		fmt.Fprintf(os.Stderr, "  cat data.tsv | yoru sql -i tsv -o tsv 'SELECT * FROM table'\n")
+		fmt.Fprintf(os.Stderr, "  yoru sql -i sqldb -o csv 'SELECT * FROM table' input.db\n")
+		fmt.Fprintf(os.Stderr, "  cat data.csv | yoru sql -i csv -o sqldb 'SELECT * FROM table' output.db\n")
 	}
 	
 	err := fs.Parse(args)
@@ -49,7 +54,7 @@ func Main(args []string) {
 	writer, err := formats.GetWriter(outFmt)
 	utils.Error(err)
 	
-	var db = (*sqlpkg.DB)(nil)
+	var db *sql.DB
 	var dbPath string
 	
 	// Handle input based on format
@@ -89,24 +94,38 @@ func Main(args []string) {
 		utils.Error(err)
 		
 	case formats.SQLDB:
-		// For SQLDB output, expect database path as next argument (after query)
-		if len(remainingArgs) < 3 {
-			utils.Error(fmt.Errorf("database path required when using -o sqldb"))
-			return
-		}
-		outDBPath := remainingArgs[2]
+		// For SQLDB output, expect database path as additional argument
+		outDBPath := ""
 		
-		// If output is different from input, copy the results to the output database
+		// Determine which argument is the output database path
+		if inFmt == formats.SQLDB {
+			// If input is sqldb, output db path should be at remainingArgs[2]
+			if len(remainingArgs) < 3 {
+				utils.Error(fmt.Errorf("output database path required when using -o sqldb with -i sqldb"))
+				return
+			}
+			outDBPath = remainingArgs[2]
+		} else {
+			// If input is csv/tsv, output db path should be at remainingArgs[1]
+			if len(remainingArgs) < 2 {
+				utils.Error(fmt.Errorf("output database path required when using -o sqldb"))
+				return
+			}
+			outDBPath = remainingArgs[1]
+		}
+		
+		// If output path is different from input, or input is not sqldb, write results
 		if inFmt != formats.SQLDB || outDBPath != dbPath {
 			outDB, err := formats.OpenDatabaseFile(outDBPath)
 			utils.Error(err)
 			defer outDB.Close()
 			
-			// Execute query on input DB and insert results into output DB
+			// Copy query results to output database
 			err = copyQueryResults(db, outDB, query)
 			utils.Error(err)
 		}
 		
+		// Write to the output database
 		err = writer.Write(db, query, outDBPath)
 		utils.Error(err)
 	}
