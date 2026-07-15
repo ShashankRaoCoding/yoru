@@ -3,18 +3,21 @@ package globals
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"yoru/utils"
 )
 
 var TEMP string
 
 func init() {
-	temp, err := utils.GetBinaryPath()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "There was an error getting the binary path, there may be unexpected behaviour. TEMP files shall be stored in the working dir\n")
-	} else {
-		TEMP = temp
-		return
+	// Try to use system temp directory
+	temp := os.TempDir()
+	TEMP = filepath.Join(temp, "yoru")
+	
+	// Create the directory if it doesn't exist
+	if err := os.MkdirAll(TEMP, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "There was an error creating temp directory, using ./temp instead\n")
+		TEMP = "./temp"
+		os.MkdirAll(TEMP, 0755)
 	}
-	TEMP = "./temp"
 }
