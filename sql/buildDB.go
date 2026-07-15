@@ -14,7 +14,7 @@ import (
 // named tableName inside dbPath. The first CSV row is treated as the header
 // and used for column names (all columns are stored as TEXT).
 func ImportCSVToSQL(r io.Reader, dbPath, tableName string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite3", "file:"+dbPath+"?cache=shared&mode=rwc")
 	if err != nil {
 		return nil, fmt.Errorf("opening db: %w", err)
 	}
