@@ -1,24 +1,31 @@
 package main
 
 import (
-	mk "make"
 	"os"
-	"sql"
+	"yoru/globals"
+	"yoru/info"
+	mkpkg "yoru/make"
+	sqlpkg "yoru/sql"
 )
 
 var Methods map[string]func([]string)
 
 func init() {
-	var Methods = map[string]func([]string){
-		"make":  mk.Main,
-		"sql": sql.Main,
-		"info":  info.Main,
+	Methods = map[string]func([]string){
+		"make": mkpkg.Main,
+		"sql":  sqlpkg.Main,
+		"info": info.Main,
 	}
 }
 
 func main() {
-	args := os.Args[1:]
-	m, ok := Methods[os.Args[0]]
+	if len(os.Args) < 2 {
+		globals.Handle(false)
+		return
+	}
+	
+	command := os.Args[1]
+	m, ok := Methods[command]
 	globals.Handle(ok)
-	m(args[1:])
+	m(os.Args[2:])
 }

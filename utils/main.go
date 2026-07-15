@@ -1,4 +1,3 @@
-
 package utils
 
 import (
@@ -15,7 +14,9 @@ func GetBinaryPath() (string, error) {
 	return path, nil
 }
 
-func Error(e Error) {
-	fmt.Fprintf(os.Stderr, "There was an error: %s\n", err)
-	os.Exit(1) 
+func Error(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "There was an error: %s\n", err)
+		os.Exit(1)
+	}
 }

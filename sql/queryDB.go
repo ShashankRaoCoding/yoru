@@ -1,4 +1,4 @@
-package main
+package sqlpkg
 
 import (
 	"database/sql"
@@ -73,4 +73,3 @@ func formatValue(v interface{}) string {
 		return fmt.Sprintf("%v", val)
 	}
 }
-

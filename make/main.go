@@ -1,6 +1,9 @@
-package main
+package mkpkg
 
-import "os"
+import (
+	"os"
+	"yoru/utils"
+)
 
 func Main(args []string) {
 	for _, path := range args {

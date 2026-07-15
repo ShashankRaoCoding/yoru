@@ -1,18 +1,27 @@
-
 package globals
 
 import (
-	"yoru/utils"
+	"fmt"
 	"os"
+	"yoru/utils"
 )
 
+var TEMP string
+
 func init() {
-	TEMP, err  := utils.GetBinaryPath() 
+	temp, err := utils.GetBinaryPath()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "There was an error getting the binary path, there may be unexpected behaviour. TEMP files shall be stored in the working dir\n")
+	} else {
+		TEMP = temp
+		return
 	}
-	TEMP = "./temp" 
+	TEMP = "./temp"
 }
 
-var TEMP string 
-
+func Handle(ok bool) {
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Invalid command\n")
+		os.Exit(1)
+	}
+}
