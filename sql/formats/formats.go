@@ -3,7 +3,6 @@ package formats
 import (
 	"database/sql"
 	"fmt"
-	"io"
 )
 
 // Format represents a data format that can be read from or written to
