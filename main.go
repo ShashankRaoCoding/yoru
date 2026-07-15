@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"yoru/globals"
 	"yoru/info"
+	"yoru/utils"
 	mkpkg "yoru/make"
 	sqlpkg "yoru/sql"
 )
@@ -20,12 +21,15 @@ func init() {
 
 func main() {
 	if len(os.Args) < 2 {
-		globals.Handle(false)
+		utils.Error(fmt.Errorf("no command provided"))
 		return
 	}
 	
 	command := os.Args[1]
 	m, ok := Methods[command]
-	globals.Handle(ok)
+	if !ok {
+		utils.Error(fmt.Errorf("method not found: %s", command))
+		return
+	}
 	m(os.Args[2:])
 }

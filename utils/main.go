@@ -16,7 +16,7 @@ func GetBinaryPath() (string, error) {
 
 func Error(err error) {
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "There was an error: %s\n", err)
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 }

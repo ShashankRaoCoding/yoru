@@ -18,10 +18,3 @@ func init() {
 	}
 	TEMP = "./temp"
 }
-
-func Handle(ok bool) {
-	if !ok {
-		fmt.Fprintf(os.Stderr, "Invalid command\n")
-		os.Exit(1)
-	}
-}
