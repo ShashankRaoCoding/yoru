@@ -8,7 +8,7 @@ import (
 )
 
 func Read(stdin io.Reader) (*sql.DB, error) {
-	input, err := io.ReadAll(stdin)
+	inputBytes, err := io.ReadAll(stdin)
 	if err != nil {
 		return nil, fmt.Errorf("reading stdin: %w", err)
 	}
@@ -18,7 +18,7 @@ func Read(stdin io.Reader) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if err := shared.ReadDelimitedToDB(string(input), db, "table", '\t'); err != nil {
+	if err := shared.ReadDelimitedToDB(string(inputBytes), db, "table", '\t'); err != nil {
 		db.Close()
 		return nil, err
 	}

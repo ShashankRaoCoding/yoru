@@ -20,7 +20,7 @@ func Write(db *sql.DB, query string) (string, error) {
 
 	quotedCols := make([]string, len(cols))
 	for i, c := range cols {
-		quotedCols[i] = fmt.Sprintf(`"%s" TEXT`, c)
+		quotedCols[i] = fmt.Sprintf(`"%s" TEXT`, strings.ReplaceAll(c, `"`, `""`))
 	}
 
 	var builder strings.Builder
@@ -55,11 +55,15 @@ func formatSQLValue(v interface{}) string {
 	if v == nil {
 		return "NULL"
 	}
+	var s string
 	switch val := v.(type) {
 	case []byte:
-		return fmt.Sprintf("'%s'", strings.ReplaceAll(string(val), "'", "''"))
+		s = string(val)
 	default:
-		s := fmt.Sprintf("%v", val)
-		return fmt.Sprintf("'%s'", strings.ReplaceAll(s, "'", "''"))
+		s = fmt.Sprintf("%v", val)
 	}
+	// Escape single quotes and backslashes for safe SQL string literals.
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, "'", "''")
+	return fmt.Sprintf("'%s'", s)
 }
