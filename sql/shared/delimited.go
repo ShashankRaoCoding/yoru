@@ -71,7 +71,7 @@ func ReadDelimitedToDB(input string, sdb Sqldb, tableName string, delimiter rune
 }
 
 func QueryToDelimitedString(sdb Sqldb, query string, delimiter rune) (string, error) {
-	rows, err := sdb.db.Query(query)
+	rows, err := sdb.Query(query)
 	if err != nil {
 		return "", fmt.Errorf("executing query: %w", err)
 	}

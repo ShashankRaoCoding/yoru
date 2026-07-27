@@ -28,6 +28,8 @@ func resolveDBPath(dbPath string) (string, error) {
 		return "", fmt.Errorf("database path is empty")
 	}
 
+	// filepath.Abs resolves relative paths from the working directory,
+	// which is the correct behavior when a user provides a relative path.
 	absPath, err := filepath.Abs(dbPath)
 	if err != nil {
 		return "", fmt.Errorf("resolving absolute database path: %w", err)
