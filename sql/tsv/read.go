@@ -1,20 +1,26 @@
 package tsv
 
 import (
-	"database/sql"
+	"fmt"
+	"io"
 	"yoru/sql/shared"
 )
 
-func Read(input string) (*sql.DB, error) {
-	db, err := shared.OpenInMemoryDatabase()
+func Read(stdin io.Reader) (shared.Sqldb, error) {
+	inputBytes, err := io.ReadAll(stdin)
 	if err != nil {
-		return nil, err
+		return shared.Sqldb{}, fmt.Errorf("reading stdin: %w", err)
 	}
 
-	if err := shared.ReadDelimitedToDB(input, db, "table", '\t'); err != nil {
-		db.Close()
-		return nil, err
+	sdb, err := shared.OpenInMemoryDatabase()
+	if err != nil {
+		return shared.Sqldb{}, err
 	}
 
-	return db, nil
+	if err := shared.ReadDelimitedToDB(string(inputBytes), sdb, "table", '\t'); err != nil {
+		sdb.Close()
+		return shared.Sqldb{}, err
+	}
+
+	return sdb, nil
 }
