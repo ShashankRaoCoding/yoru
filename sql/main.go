@@ -13,7 +13,7 @@ import (
 	"yoru/utils"
 )
 
-type ReaderFunc func(input string) (*sql.DB, error)
+type ReaderFunc func(stdin io.Reader) (*sql.DB, error)
 type WriterFunc func(db *sql.DB, query string) (string, error)
 
 var readers = map[string]ReaderFunc{
@@ -23,8 +23,9 @@ var readers = map[string]ReaderFunc{
 }
 
 var writers = map[string]WriterFunc{
-	"csv": csvfmt.Write,
-	"tsv": tsv.Write,
+	"csv":   csvfmt.Write,
+	"tsv":   tsv.Write,
+	"sqldb": sqldb.Write,
 }
 
 var defaultTableRegex = regexp.MustCompile(`(?i)\b(from|join|update|into|delete from)\s+table\b`)
@@ -33,7 +34,7 @@ func Main(args []string) {
 	fs := flag.NewFlagSet("sql", flag.ExitOnError)
 
 	inputFormat := fs.String("i", "csv", "Input format: csv, tsv, or sqldb")
-	outputFormat := fs.String("o", "csv", "Output format: csv or tsv")
+	outputFormat := fs.String("o", "csv", "Output format: csv, tsv, or sqldb")
 
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: yoru sql [options] <query>\n")
@@ -74,10 +75,7 @@ func Main(args []string) {
 		return
 	}
 
-	stdinBytes, err := io.ReadAll(os.Stdin)
-	utils.Error(err)
-
-	db, err := reader(string(stdinBytes))
+	db, err := reader(os.Stdin)
 	utils.Error(err)
 	defer db.Close()
 

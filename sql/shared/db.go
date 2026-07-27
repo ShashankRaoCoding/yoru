@@ -15,14 +15,6 @@ func resolveDBPath(dbPath string) (string, error) {
 		return "", fmt.Errorf("database path is empty")
 	}
 
-	if !filepath.IsAbs(dbPath) {
-		exePath, err := os.Executable()
-		if err != nil {
-			return "", fmt.Errorf("resolving executable path: %w", err)
-		}
-		dbPath = filepath.Join(filepath.Dir(exePath), dbPath)
-	}
-
 	absPath, err := filepath.Abs(dbPath)
 	if err != nil {
 		return "", fmt.Errorf("resolving absolute database path: %w", err)
