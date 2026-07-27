@@ -1,13 +1,13 @@
 package sqldb
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
+	"yoru/sql/shared"
 )
 
-func Write(db *sql.DB, query string) (string, error) {
-	rows, err := db.Query(query)
+func Write(sdb shared.Sqldb, query string) (string, error) {
+	rows, err := sdb.Query(query)
 	if err != nil {
 		return "", fmt.Errorf("executing query: %w", err)
 	}

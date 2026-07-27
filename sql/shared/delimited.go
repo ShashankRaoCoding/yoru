@@ -1,14 +1,13 @@
 package shared
 
 import (
-	"database/sql"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"strings"
 )
 
-func ReadDelimitedToDB(input string, db *sql.DB, tableName string, delimiter rune) error {
+func ReadDelimitedToDB(input string, sdb Sqldb, tableName string, delimiter rune) error {
 	csvReader := csv.NewReader(strings.NewReader(input))
 	csvReader.Comma = delimiter
 
@@ -23,7 +22,7 @@ func ReadDelimitedToDB(input string, db *sql.DB, tableName string, delimiter run
 	}
 
 	createStmt := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (%s)`, tableName, strings.Join(cols, ", "))
-	if _, err := db.Exec(createStmt); err != nil {
+	if _, err := sdb.db.Exec(createStmt); err != nil {
 		return fmt.Errorf("creating table: %w", err)
 	}
 
@@ -31,7 +30,7 @@ func ReadDelimitedToDB(input string, db *sql.DB, tableName string, delimiter run
 	placeholders = strings.TrimSuffix(placeholders, ",")
 	insertStmt := fmt.Sprintf(`INSERT INTO "%s" VALUES (%s)`, tableName, placeholders)
 
-	tx, err := db.Begin()
+	tx, err := sdb.db.Begin()
 	if err != nil {
 		return fmt.Errorf("beginning transaction: %w", err)
 	}
@@ -71,8 +70,8 @@ func ReadDelimitedToDB(input string, db *sql.DB, tableName string, delimiter run
 	return nil
 }
 
-func QueryToDelimitedString(db *sql.DB, query string, delimiter rune) (string, error) {
-	rows, err := db.Query(query)
+func QueryToDelimitedString(sdb Sqldb, query string, delimiter rune) (string, error) {
+	rows, err := sdb.db.Query(query)
 	if err != nil {
 		return "", fmt.Errorf("executing query: %w", err)
 	}

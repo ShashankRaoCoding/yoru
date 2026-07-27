@@ -1,10 +1,9 @@
 package csv
 
 import (
-	"database/sql"
 	"yoru/sql/shared"
 )
 
-func Write(db *sql.DB, query string) (string, error) {
-	return shared.QueryToDelimitedString(db, query, ',')
+func Write(sdb shared.Sqldb, query string) (string, error) {
+	return shared.QueryToDelimitedString(sdb, query, ',')
 }

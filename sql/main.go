@@ -1,20 +1,20 @@
 package sqlpkg
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"regexp"
 	csvfmt "yoru/sql/csv"
+	"yoru/sql/shared"
 	"yoru/sql/sqldb"
 	"yoru/sql/tsv"
 	"yoru/utils"
 )
 
-type ReaderFunc func(stdin io.Reader) (*sql.DB, error)
-type WriterFunc func(db *sql.DB, query string) (string, error)
+type ReaderFunc func(stdin io.Reader) (shared.Sqldb, error)
+type WriterFunc func(sdb shared.Sqldb, query string) (string, error)
 
 var readers = map[string]ReaderFunc{
 	"csv":   csvfmt.Read,

@@ -1,27 +1,26 @@
 package csv
 
 import (
-	"database/sql"
 	"fmt"
 	"io"
 	"yoru/sql/shared"
 )
 
-func Read(stdin io.Reader) (*sql.DB, error) {
+func Read(stdin io.Reader) (shared.Sqldb, error) {
 	inputBytes, err := io.ReadAll(stdin)
 	if err != nil {
-		return nil, fmt.Errorf("reading stdin: %w", err)
+		return shared.Sqldb{}, fmt.Errorf("reading stdin: %w", err)
 	}
 
-	db, err := shared.OpenInMemoryDatabase()
+	sdb, err := shared.OpenInMemoryDatabase()
 	if err != nil {
-		return nil, err
+		return shared.Sqldb{}, err
 	}
 
-	if err := shared.ReadDelimitedToDB(string(inputBytes), db, "table", ','); err != nil {
-		db.Close()
-		return nil, err
+	if err := shared.ReadDelimitedToDB(string(inputBytes), sdb, "table", ','); err != nil {
+		sdb.Close()
+		return shared.Sqldb{}, err
 	}
 
-	return db, nil
+	return sdb, nil
 }
