@@ -6,6 +6,7 @@ import (
 	"yoru/info"
 	"yoru/utils"
 	mkpkg "yoru/make"
+	sixelpkg "yoru/sixel"
 	sqlpkg "yoru/sql"
 )
 
@@ -13,9 +14,10 @@ var Methods map[string]func([]string)
 
 func init() {
 	Methods = map[string]func([]string){
-		"make": mkpkg.Main,
-		"sql":  sqlpkg.Main,
-		"info": info.Main,
+		"make":  mkpkg.Main,
+		"sql":   sqlpkg.Main,
+		"sixel": sixelpkg.Main,
+		"info":  info.Main,
 	}
 }
 
