@@ -20,8 +20,8 @@ import (
 	"yoru/utils"
 )
 
-// Main reads input from stdin and renders either SIXEL images or a pretty table.
-// Use -i to select the input format.
+// Main keeps backward-compatible behavior for `yoru sixel print`.
+// Prefer `yoru print image` and `yoru print table`.
 func Main(args []string) {
 	fs := flag.NewFlagSet("print", flag.ExitOnError)
 	inputFormat := fs.String("i", "png", "Input format: png, jpeg, jpg, gif, bmp, csv, tsv")
@@ -71,6 +71,82 @@ func Main(args []string) {
 	img = renderToSixelImage(img, targetWidth, targetHeight)
 	sixelData := encode(img)
 	_, err = fmt.Fprint(os.Stdout, sixelData)
+	utils.Error(err)
+}
+
+// MainImage reads image data from stdin and renders it as SIXEL.
+func MainImage(args []string) {
+	fs := flag.NewFlagSet("image", flag.ExitOnError)
+	inputFormat := fs.String("i", "png", "Input format: png, jpeg, jpg, gif, bmp")
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: yoru print image -i <format> [width] [height]\n")
+		fmt.Fprintf(os.Stderr, "\nInput formats:\n")
+		fmt.Fprintf(os.Stderr, "  png, jpeg, jpg, gif, bmp\n")
+		fmt.Fprintf(os.Stderr, "\nArguments:\n")
+		fmt.Fprintf(os.Stderr, "  width   Optional target width in pixels\n")
+		fmt.Fprintf(os.Stderr, "  height  Optional target height in pixels\n")
+		fmt.Fprintf(os.Stderr, "\nExamples:\n")
+		fmt.Fprintf(os.Stderr, "  cat image.png | yoru print image -i png\n")
+		fmt.Fprintf(os.Stderr, "  cat image.jpg | yoru print image -i jpeg 100 50\n")
+	}
+
+	err := fs.Parse(args)
+	utils.Error(err)
+
+	format := normalizeFormat(*inputFormat)
+	switch format {
+	case "png", "jpeg", "gif", "bmp":
+		// continue
+	default:
+		utils.Error(fmt.Errorf("unsupported input format %q", *inputFormat))
+		return
+	}
+
+	remaining := fs.Args()
+	targetWidth, targetHeight := parseDimensions(remaining)
+	img, err := decodeImageByFormat(os.Stdin, format)
+	utils.Error(err)
+	img = renderToSixelImage(img, targetWidth, targetHeight)
+	sixelData := encode(img)
+	_, err = fmt.Fprint(os.Stdout, sixelData)
+	utils.Error(err)
+}
+
+// MainTable reads CSV/TSV data from stdin and renders it as a pretty table.
+func MainTable(args []string) {
+	fs := flag.NewFlagSet("table", flag.ExitOnError)
+	inputFormat := fs.String("i", "csv", "Input format: csv or tsv")
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: yoru print table -i <format>\n")
+		fmt.Fprintf(os.Stderr, "\nInput formats:\n")
+		fmt.Fprintf(os.Stderr, "  csv, tsv\n")
+		fmt.Fprintf(os.Stderr, "\nExamples:\n")
+		fmt.Fprintf(os.Stderr, "  cat data.csv | yoru print table -i csv\n")
+		fmt.Fprintf(os.Stderr, "  cat data.tsv | yoru print table -i tsv\n")
+	}
+
+	err := fs.Parse(args)
+	utils.Error(err)
+	if len(fs.Args()) > 0 {
+		utils.Error(fmt.Errorf("unexpected extra arguments"))
+		return
+	}
+
+	format := normalizeFormat(*inputFormat)
+	delimiter := ','
+	switch format {
+	case "csv":
+		delimiter = ','
+	case "tsv":
+		delimiter = '\t'
+	default:
+		utils.Error(fmt.Errorf("unsupported input format %q", *inputFormat))
+		return
+	}
+
+	out, err := renderDelimitedAsTable(os.Stdin, delimiter)
+	utils.Error(err)
+	_, err = fmt.Fprintln(os.Stdout, out)
 	utils.Error(err)
 }
 
