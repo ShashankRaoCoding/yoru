@@ -22,9 +22,10 @@ func Main(args []string) {
 	fmt.Println("  printf 'input.db' | yoru sql -i sqldb -o csv 'SELECT * FROM table'")
 	fmt.Println("\nSIXEL Subcommands:")
 	fmt.Println("  compatible       Check if the terminal supports SIXEL graphics")
-	fmt.Println("  print            Read an image from stdin and display in SIXEL format")
+	fmt.Println("  print            Render images to SIXEL or tabular text to a pretty table")
 	fmt.Println("\nSIXEL Examples:")
 	fmt.Println("  yoru sixel compatible")
-	fmt.Println("  cat image.png | yoru sixel print")
-	fmt.Println("  cat image.jpg | yoru sixel print 100 50")
+	fmt.Println("  cat image.png | yoru sixel print -i png")
+	fmt.Println("  cat image.jpg | yoru sixel print -i jpeg 100 50")
+	fmt.Println("  cat data.csv | yoru sixel print -i csv")
 }

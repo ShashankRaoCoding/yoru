@@ -1,42 +1,89 @@
 package print
 
 import (
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
+	"image/gif"
+	"image/jpeg"
+	"image/png"
+	"io"
 	"os"
 	"strconv"
 	"strings"
 
-	_ "golang.org/x/image/bmp"
+	"golang.org/x/image/bmp"
 	xdraw "golang.org/x/image/draw"
 	"yoru/utils"
 )
 
-// Main reads an image from stdin and writes its SIXEL representation to stdout.
-// Optional positional arguments set the target width and height in pixels.
+// Main reads input from stdin and renders either SIXEL images or a pretty table.
+// Use -i to select the input format.
 func Main(args []string) {
 	fs := flag.NewFlagSet("print", flag.ExitOnError)
+	inputFormat := fs.String("i", "png", "Input format: png, jpeg, jpg, gif, bmp, csv, tsv")
 	fs.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: yoru sixel print [width] [height]\n")
-		fmt.Fprintf(os.Stderr, "\nReads an image from stdin and outputs SIXEL escape sequences.\n")
+		fmt.Fprintf(os.Stderr, "Usage: yoru sixel print -i <format> [width] [height]\n")
+		fmt.Fprintf(os.Stderr, "\nInput formats:\n")
+		fmt.Fprintf(os.Stderr, "  png, jpeg, jpg, gif, bmp   Render stdin as SIXEL\n")
+		fmt.Fprintf(os.Stderr, "  csv, tsv                   Render stdin as a pretty table\n")
 		fmt.Fprintf(os.Stderr, "\nArguments:\n")
-		fmt.Fprintf(os.Stderr, "  width   Optional target width in pixels\n")
-		fmt.Fprintf(os.Stderr, "  height  Optional target height in pixels\n")
+		fmt.Fprintf(os.Stderr, "  width   Optional target width in pixels (image formats only)\n")
+		fmt.Fprintf(os.Stderr, "  height  Optional target height in pixels (image formats only)\n")
 		fmt.Fprintf(os.Stderr, "\nExamples:\n")
-		fmt.Fprintf(os.Stderr, "  cat image.png | yoru sixel print\n")
-		fmt.Fprintf(os.Stderr, "  cat image.jpg | yoru sixel print 100 50\n")
+		fmt.Fprintf(os.Stderr, "  cat image.png | yoru sixel print -i png\n")
+		fmt.Fprintf(os.Stderr, "  cat image.jpg | yoru sixel print -i jpeg 100 50\n")
+		fmt.Fprintf(os.Stderr, "  cat data.csv | yoru sixel print -i csv\n")
 	}
 
 	err := fs.Parse(args)
 	utils.Error(err)
 
 	remaining := fs.Args()
+	format := normalizeFormat(*inputFormat)
+	switch format {
+	case "csv", "tsv":
+		if len(remaining) > 0 {
+			utils.Error(fmt.Errorf("width/height are only supported for image formats"))
+		}
+		delimiter := ','
+		if format == "tsv" {
+			delimiter = '\t'
+		}
+		out, err := renderDelimitedAsTable(os.Stdin, delimiter)
+		utils.Error(err)
+		_, err = fmt.Fprintln(os.Stdout, out)
+		utils.Error(err)
+		return
+	case "png", "jpeg", "gif", "bmp":
+		// continue
+	default:
+		utils.Error(fmt.Errorf("unsupported input format %q", *inputFormat))
+		return
+	}
+
+	targetWidth, targetHeight := parseDimensions(remaining)
+	img, err := decodeImageByFormat(os.Stdin, format)
+	utils.Error(err)
+	img = renderToSixelImage(img, targetWidth, targetHeight)
+	sixelData := encode(img)
+	_, err = fmt.Fprint(os.Stdout, sixelData)
+	utils.Error(err)
+}
+
+func normalizeFormat(format string) string {
+	format = strings.ToLower(strings.TrimSpace(format))
+	if format == "jpg" {
+		return "jpeg"
+	}
+	return format
+}
+
+func parseDimensions(remaining []string) (int, int) {
+	var err error
 	var targetWidth, targetHeight int
 
 	if len(remaining) >= 1 {
@@ -51,22 +98,123 @@ func Main(args []string) {
 			utils.Error(fmt.Errorf("invalid height %q: %w", remaining[1], err))
 		}
 	}
-
-	img, _, err := image.Decode(os.Stdin)
-	if err != nil {
-		utils.Error(fmt.Errorf("decoding image: %w", err))
+	if len(remaining) > 2 {
+		utils.Error(fmt.Errorf("unexpected extra arguments after height"))
 	}
 
+	return targetWidth, targetHeight
+}
+
+func decodeImageByFormat(r io.Reader, format string) (image.Image, error) {
+	switch format {
+	case "png":
+		img, err := png.Decode(r)
+		if err != nil {
+			return nil, fmt.Errorf("decoding png image: %w", err)
+		}
+		return img, nil
+	case "jpeg":
+		img, err := jpeg.Decode(r)
+		if err != nil {
+			return nil, fmt.Errorf("decoding jpeg image: %w", err)
+		}
+		return img, nil
+	case "gif":
+		img, err := gif.Decode(r)
+		if err != nil {
+			return nil, fmt.Errorf("decoding gif image: %w", err)
+		}
+		return img, nil
+	case "bmp":
+		img, err := bmp.Decode(r)
+		if err != nil {
+			return nil, fmt.Errorf("decoding bmp image: %w", err)
+		}
+		return img, nil
+	default:
+		return nil, fmt.Errorf("unsupported image format %q", format)
+	}
+}
+
+func renderToSixelImage(img image.Image, targetWidth, targetHeight int) image.Image {
 	if targetWidth > 0 || targetHeight > 0 {
 		img = scaleImage(img, targetWidth, targetHeight)
 	}
+	return flattenAlpha(img)
+}
 
-	// Flatten alpha against a white background before quantisation.
-	img = flattenAlpha(img)
+func renderDelimitedAsTable(r io.Reader, delimiter rune) (string, error) {
+	input, err := io.ReadAll(r)
+	if err != nil {
+		return "", fmt.Errorf("reading input: %w", err)
+	}
 
-	sixelData := encode(img)
-	_, err = fmt.Fprint(os.Stdout, sixelData)
-	utils.Error(err)
+	reader := csv.NewReader(strings.NewReader(string(input)))
+	reader.Comma = delimiter
+	records, err := reader.ReadAll()
+	if err != nil {
+		return "", fmt.Errorf("reading delimited input: %w", err)
+	}
+	if len(records) == 0 {
+		return "", nil
+	}
+
+	maxCols := 0
+	for _, row := range records {
+		if len(row) > maxCols {
+			maxCols = len(row)
+		}
+	}
+
+	widths := make([]int, maxCols)
+	rows := make([][]string, len(records))
+	for i, row := range records {
+		normalized := make([]string, maxCols)
+		copy(normalized, row)
+		rows[i] = normalized
+		for colIdx, cell := range normalized {
+			if len(cell) > widths[colIdx] {
+				widths[colIdx] = len(cell)
+			}
+		}
+	}
+
+	border := func(left, mid, right string) string {
+		var b strings.Builder
+		b.WriteString(left)
+		for i, width := range widths {
+			b.WriteString(strings.Repeat("-", width+2))
+			if i < len(widths)-1 {
+				b.WriteString(mid)
+			}
+		}
+		b.WriteString(right)
+		return b.String()
+	}
+
+	var out strings.Builder
+	out.WriteString(border("+", "+", "+"))
+	out.WriteString("\n")
+
+	for rowIdx, row := range rows {
+		out.WriteString("|")
+		for colIdx, cell := range row {
+			padding := widths[colIdx] - len(cell)
+			out.WriteString(" ")
+			out.WriteString(cell)
+			out.WriteString(strings.Repeat(" ", padding+1))
+			out.WriteString("|")
+		}
+		out.WriteString("\n")
+
+		if rowIdx == 0 && len(rows) > 1 {
+			out.WriteString(border("+", "+", "+"))
+			out.WriteString("\n")
+		}
+	}
+
+	out.WriteString(border("+", "+", "+"))
+	return out.String(), nil
 }
 
 // flattenAlpha composites img over a white background so that transparent
@@ -105,9 +253,9 @@ func scaleImage(img image.Image, targetWidth, targetHeight int) image.Image {
 
 // xtermPalette builds the standard xterm 256-colour palette.
 //
-//   Indices  0–15  : standard ANSI colours
-//   Indices 16–231 : 6×6×6 RGB colour cube
-//   Indices 232–255: 24-step greyscale ramp
+//	Indices  0–15  : standard ANSI colours
+//	Indices 16–231 : 6×6×6 RGB colour cube
+//	Indices 232–255: 24-step greyscale ramp
 func xtermPalette() color.Palette {
 	pal := make(color.Palette, 256)
 
