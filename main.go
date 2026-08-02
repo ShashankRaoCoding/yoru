@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 	"yoru/info"
-	printpkg "yoru/print"
-	"yoru/utils"
 	mkpkg "yoru/make"
+	printpkg "yoru/print"
 	sixelpkg "yoru/sixel"
 	sqlpkg "yoru/sql"
+	"yoru/utils"
 )
 
 var Methods map[string]func([]string)
@@ -28,7 +28,7 @@ func main() {
 		utils.Error(fmt.Errorf("no command provided"))
 		return
 	}
-	
+
 	command := os.Args[1]
 	m, ok := Methods[command]
 	if !ok {
