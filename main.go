@@ -9,6 +9,7 @@ import (
 	sixelpkg "yoru/sixel"
 	sqlpkg "yoru/sql"
 	"yoru/utils"
+	lq "yoru/lq" 
 )
 
 var Methods map[string]func([]string)
