@@ -54,19 +54,24 @@ func walk(dir, prefix string, depth, maxDepth int, all bool, c *counts) {
 }
 
 func Main(args []string) {
+	var _depth int
 	var depth *int
+	var _all bool
 	var all *bool 
+	var err error 
 	
 	// depth := flag.Int("L", 5, "maximum depth to descend")
-	depth , err = &strconv.Atoi(args[0]) 
+	_depth , err = strconv.Atoi(args[0]) 
 	if err != nil {
 		panic(err) 
 	}
+	depth = &_depth
 	if len(args) < 2 {
-		all = &false 
+		_all = false 
 	} else {
-		all = &true 
+		_all = true 
 	}
+	all = &_all
 	// all := flag.Bool("a", false, "include hidden (dot) files and directories")
 	// flag.Usage = func() {
 		// fmt.Fprintln(os.Stderr, "usage: lq [-L depth] [-a] [dir]")
