@@ -53,20 +53,27 @@ func walk(dir, prefix string, depth, maxDepth int, all bool, c *counts) {
 }
 
 func Main(args []string) {
+	var depth int
+	var all bool 
 	
 	// depth := flag.Int("L", 5, "maximum depth to descend")
-	depth := strconv.Atoi(args[0]) 
-	all := flag.Bool("a", false, "include hidden (dot) files and directories")
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: lq [-L depth] [-a] [dir]")
-		flag.PrintDefaults()
+	depth = strconv.Atoi(args[0]) 
+	if len(args) < 2 {
+		all = false 
+	} else {
+		all = true 
 	}
-	flag.Parse()
+	// all := flag.Bool("a", false, "include hidden (dot) files and directories")
+	// flag.Usage = func() {
+		// fmt.Fprintln(os.Stderr, "usage: lq [-L depth] [-a] [dir]")
+		// flag.PrintDefaults()
+	// }
+	// flag.Parse()
 
 	root := "."
-	if flag.NArg() > 0 {
-		root = flag.Arg(0)
-	}
+	// if flag.NArg() > 0 {
+		// root = flag.Arg(0)
+	// }
 	if info, err := os.Stat(root); err != nil || !info.IsDir() {
 		fmt.Fprintf(os.Stderr, "lq: %s: not a readable directory\n", root)
 		os.Exit(1)
