@@ -20,6 +20,7 @@ func init() {
 		"sixel": sixelpkg.Main,
 		"print": printpkg.Main,
 		"info":  info.Main,
+		"lq": lq.Main, 
 	}
 }
 
@@ -32,7 +33,7 @@ func main() {
 	command := os.Args[1]
 	m, ok := Methods[command]
 	if !ok {
-		utils.Error(fmt.Errorf("method not found: %s", command))
+		utils.Error(fmt.Errorf("method exist'nt", command))
 		return
 	}
 	m(os.Args[2:])
