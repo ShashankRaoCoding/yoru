@@ -63,10 +63,16 @@ func Main(args []string) {
 	// depth := flag.Int("L", 5, "maximum depth to descend")
 	_depth , err = strconv.Atoi(args[0]) 
 	if err != nil {
+		if len(args) == 0 {
+			_depth = 0 
+		} else {
+			
+		
 		panic(err) 
+		}
 	}
 	depth = &_depth
-	if len(args) < 2 {
+	if len(args) < 2 and args[1] == "-a" {
 		_all = false 
 	} else {
 		_all = true 
